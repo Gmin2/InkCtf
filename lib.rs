@@ -218,6 +218,12 @@ mod ink_spector {
             self.emitted_instances.get(instance)
         }
 
+        /// Get the contract owner
+        #[ink(message)]
+        pub fn get_owner(&self) -> ink::Address {
+            self.owner
+        }
+
         /// Convert Address (H160) to AccountId (32 bytes)
         fn address_to_account_id(&self, addr: ink::Address) -> AccountId {
             let addr_slice: &[u8] = addr.as_ref();
