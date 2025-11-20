@@ -40,9 +40,11 @@ mod fallback_factory {
             let salt: [u8; 32] = *player.as_ref();
 
             // Build creation parameters
+            // Use transferred value to fund the instance
+            let endowment = self.env().transferred_value();
             let create_params = build_create::<FallbackRef>()
                 .code_hash(code_hash_h256)
-                .endowment(U256::from(1000_000_000_000_000u128)) // Give it initial balance for withdraw
+                .endowment(endowment) // Pass through the value sent to factory
                 .exec_input(
                     ExecutionInput::new(Selector::new(ink::selector_bytes!("new")))
                 )
