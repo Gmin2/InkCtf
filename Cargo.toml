@@ -1,11 +1,15 @@
 [package]
-name = "InkCtf"
+name = "ink_spector"
 version = "0.1.0"
-authors = ["[your_name] <[your_email]>"]
-edition = "2024"
+authors = ["Mintu Gogoi <mintugogoi567@gmail.com>"]
+edition = "2021"
+publish = false
 
 [dependencies]
-ink = { version = "6.0.0-beta", default-features = false, features = ["unstable-hostfn"] }
+ink = { version = "6.0.0-beta.1", default-features = false }
+traits = { path = "traits", default-features = false, features = ["ink-as-dependency"] }
+scale = { package = "parity-scale-codec", version = "3.7.4", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11", default-features = false, features = ["derive"], optional = true }
 
 [dev-dependencies]
 ink_e2e = { version = "6.0.0-beta" }
@@ -17,6 +21,9 @@ path = "lib.rs"
 default = ["std"]
 std = [
     "ink/std",
+    "traits/std",
+    "scale/std",
+    "scale-info/std",
 ]
 ink-as-dependency = []
 e2e-tests = []
