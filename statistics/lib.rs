@@ -6,54 +6,55 @@ mod statistics {
     use ink::storage::Mapping;
 
     /// Stores statistics and analytics for the InkSpector game
+    /// Uses ink::Address (H160, 20 bytes) for all addresses in pallet-revive
     #[ink(storage)]
     pub struct Statistics {
-        /// Contract owner (InkSpector coordinator) - stored as Address (H160)
+        /// Contract owner (InkSpector coordinator)
         owner: ink::Address,
-        /// Tracks all registered levels
-        registered_levels: Mapping<AccountId, bool>,
+        /// Tracks all registered levels (factory addresses)
+        registered_levels: Mapping<ink::Address, bool>,
         /// Tracks instances created: (player, level) -> Vec<instance>
-        player_instances: Mapping<(AccountId, AccountId), Vec<AccountId>>,
+        player_instances: Mapping<(ink::Address, ink::Address), Vec<ink::Address>>,
         /// Tracks successful completions: (player, level) -> count
-        success_count: Mapping<(AccountId, AccountId), u32>,
+        success_count: Mapping<(ink::Address, ink::Address), u32>,
         /// Tracks failed submissions: (player, level) -> count
-        failure_count: Mapping<(AccountId, AccountId), u32>,
+        failure_count: Mapping<(ink::Address, ink::Address), u32>,
         /// Total instances created per level
-        total_instances: Mapping<AccountId, u32>,
+        total_instances: Mapping<ink::Address, u32>,
     }
 
     /// Events emitted by the Statistics contract
     #[ink(event)]
     pub struct NewLevelRegistered {
         #[ink(topic)]
-        level: AccountId,
+        level: ink::Address,
     }
 
     #[ink(event)]
     pub struct InstanceCreated {
         #[ink(topic)]
-        player: AccountId,
+        player: ink::Address,
         #[ink(topic)]
-        level: AccountId,
-        instance: AccountId,
+        level: ink::Address,
+        instance: ink::Address,
     }
 
     #[ink(event)]
     pub struct SubmissionSuccess {
         #[ink(topic)]
-        player: AccountId,
+        player: ink::Address,
         #[ink(topic)]
-        level: AccountId,
-        instance: AccountId,
+        level: ink::Address,
+        instance: ink::Address,
     }
 
     #[ink(event)]
     pub struct SubmissionFailure {
         #[ink(topic)]
-        player: AccountId,
+        player: ink::Address,
         #[ink(topic)]
-        level: AccountId,
-        instance: AccountId,
+        level: ink::Address,
+        instance: ink::Address,
     }
 
     /// Errors that can occur in Statistics operations
@@ -87,9 +88,9 @@ mod statistics {
             Ok(())
         }
 
-        /// Saves a new level to the statistics
+        /// Saves a new level (factory) to the statistics
         #[ink(message)]
-        pub fn save_new_level(&mut self, level: AccountId) -> Result<(), StatisticsError> {
+        pub fn save_new_level(&mut self, level: ink::Address) -> Result<(), StatisticsError> {
             self.only_owner()?;
             self.registered_levels.insert(level, &true);
             self.total_instances.insert(level, &0);
@@ -98,13 +99,19 @@ mod statistics {
             Ok(())
         }
 
+        /// Check if a level is registered
+        #[ink(message)]
+        pub fn is_level_registered(&self, level: ink::Address) -> bool {
+            self.registered_levels.get(level).unwrap_or(false)
+        }
+
         /// Records a new instance creation
         #[ink(message)]
         pub fn create_new_instance(
             &mut self,
-            instance: AccountId,
-            level: AccountId,
-            player: AccountId,
+            instance: ink::Address,
+            level: ink::Address,
+            player: ink::Address,
         ) -> Result<(), StatisticsError> {
             self.only_owner()?;
 
@@ -130,9 +137,9 @@ mod statistics {
         #[ink(message)]
         pub fn submit_success(
             &mut self,
-            instance: AccountId,
-            level: AccountId,
-            player: AccountId,
+            instance: ink::Address,
+            level: ink::Address,
+            player: ink::Address,
         ) -> Result<(), StatisticsError> {
             self.only_owner()?;
 
@@ -152,9 +159,9 @@ mod statistics {
         #[ink(message)]
         pub fn submit_failure(
             &mut self,
-            instance: AccountId,
-            level: AccountId,
-            player: AccountId,
+            instance: ink::Address,
+            level: ink::Address,
+            player: ink::Address,
         ) -> Result<(), StatisticsError> {
             self.only_owner()?;
 
@@ -172,26 +179,32 @@ mod statistics {
 
         /// Get total instances created for a level
         #[ink(message)]
-        pub fn get_total_instances(&self, level: AccountId) -> u32 {
+        pub fn get_total_instances(&self, level: ink::Address) -> u32 {
             self.total_instances.get(level).unwrap_or(0)
         }
 
         /// Get success count for a player on a level
         #[ink(message)]
-        pub fn get_success_count(&self, player: AccountId, level: AccountId) -> u32 {
+        pub fn get_success_count(&self, player: ink::Address, level: ink::Address) -> u32 {
             self.success_count.get(&(player, level)).unwrap_or(0)
         }
 
         /// Get failure count for a player on a level
         #[ink(message)]
-        pub fn get_failure_count(&self, player: AccountId, level: AccountId) -> u32 {
+        pub fn get_failure_count(&self, player: ink::Address, level: ink::Address) -> u32 {
             self.failure_count.get(&(player, level)).unwrap_or(0)
         }
 
         /// Get instances created by a player for a level
         #[ink(message)]
-        pub fn get_player_instances(&self, player: AccountId, level: AccountId) -> Vec<AccountId> {
+        pub fn get_player_instances(&self, player: ink::Address, level: ink::Address) -> Vec<ink::Address> {
             self.player_instances.get(&(player, level)).unwrap_or_default()
+        }
+
+        /// Get the contract owner
+        #[ink(message)]
+        pub fn get_owner(&self) -> ink::Address {
+            self.owner
         }
     }
 }
