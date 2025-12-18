@@ -1,0 +1,82 @@
+{
+  "levels": [
+    {
+      "id": "instance",
+      "name": "Instance",
+      "difficulty": 1,
+      "difficultyLabel": "Easy",
+      "description": "instance.md",
+      "completedDescription": "instance_complete.md",
+      "factoryAddress": "0x9ae57Cf7f28651FB3AB5d86524D0049362D29C8E",
+      "codeHash": "0xd8b60704c36f928777a7f33c5c222beb1c1000eca8a4a1f4088dc8e29c495580",
+      "author": "InkCTF Team",
+      "tags": ["beginner", "storage", "public-data"]
+    },
+    {
+      "id": "fallback",
+      "name": "Fallback",
+      "difficulty": 3,
+      "difficultyLabel": "Medium",
+      "description": "fallback.md",
+      "completedDescription": "fallback_complete.md",
+      "factoryAddress": "0x93fF27d4d3ad03D3aa596b75dEdb9c94a94D1F13",
+      "codeHash": "0xfd47475d49abc7bcc8b5e39b4d7fd66537d844665805d7b9544e91cf2e6c9e28",
+      "author": "InkCTF Team",
+      "tags": ["ownership", "fallback", "access-control"]
+    },
+    {
+      "id": "reentrance",
+      "name": "Re-entrancy",
+      "difficulty": 6,
+      "difficultyLabel": "Hard",
+      "description": "reentrance.md",
+      "completedDescription": "reentrance_complete.md",
+      "factoryAddress": "0x165e19c3D5b9Cf24395AF1E2286c73410F3be712",
+      "codeHash": "0xf4dec3b5da389f71a7329ffd236321caaeccac224d0ff94646f4589ae106fb25",
+      "author": "InkCTF Team",
+      "tags": ["reentrancy", "checks-effects-interactions", "fund-drain"]
+    },
+    {
+      "id": "coinflip",
+      "name": "Coin Flip",
+      "difficulty": 4,
+      "difficultyLabel": "Medium",
+      "description": "coinflip.md",
+      "completedDescription": "coinflip_complete.md",
+      "factoryAddress": "0x8fde0C3f9c11bee2F66F0E82415834fe67f25aAa",
+      "codeHash": "0x82051d3847c7b748a6d5edb3c156d1155ff31a084989e9fee0f7b33094e2bcb2",
+      "author": "InkCTF Team",
+      "tags": ["randomness", "block-data", "prediction"]
+    },
+    {
+      "id": "king",
+      "name": "King",
+      "difficulty": 5,
+      "difficultyLabel": "Medium",
+      "description": "king.md",
+      "completedDescription": "king_complete.md",
+      "factoryAddress": "0x5b5c27597917857d2869f2ffe61F8606DBe4a5db",
+      "codeHash": "0x61e5ec54b7481fb3562df6d44c29d3604da9fc5f4d876e6a44d945cc90133d6b",
+      "author": "InkCTF Team",
+      "tags": ["dos", "external-calls", "transfer-failure"]
+    },
+    {
+      "id": "vault",
+      "name": "Vault",
+      "difficulty": 2,
+      "difficultyLabel": "Easy",
+      "description": "vault.md",
+      "completedDescription": "vault_complete.md",
+      "factoryAddress": "0x14279D8C03c9feAaFe36229a634505EF231c4476",
+      "codeHash": "0x4f99e8a789f82e69e30bce1ada23bd42a47c454dccb96ffbbf6edbb4bc4d5199",
+      "author": "InkCTF Team",
+      "tags": ["storage", "privacy", "blockchain-transparency"]
+    }
+  ],
+  "network": {
+    "name": "Paseo Asset Hub",
+    "rpc": "wss://testnet-passet-hub.polkadot.io",
+    "explorer": "https://assethub-paseo.subscan.io"
+  },
+  "statisticsContract": "0x40c68bb385e9AD1d19D1FA5ABc86BE0f1464099b"
+}
