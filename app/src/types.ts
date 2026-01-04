@@ -16,6 +16,8 @@ export interface Level {
   sourceCode: string;
   initialState: Record<string, unknown>;
   contractAddress: string;
+  hint?: string;
+  skills?: string[];
 }
 
 export interface UserProgress {
