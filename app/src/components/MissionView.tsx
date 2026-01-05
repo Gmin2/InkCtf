@@ -155,9 +155,9 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
         </div>
       </nav>
 
-      <div className="flex-1 flex gap-8 overflow-hidden min-h-[600px]">
+      <div className="flex-1 flex gap-6 overflow-hidden min-h-[600px]">
         {/* Sidebar Info */}
-        <div className="w-[420px] flex flex-col gap-8">
+        <div className="w-[340px] min-w-[280px] shrink-0 flex flex-col gap-6">
            <div className={`flex-1 border p-10 overflow-y-auto custom-scrollbar ${
              isLight ? 'bg-white border-zinc-200' : 'border-[var(--border-color)] bg-[var(--card-bg)]'
            }`}>
@@ -228,7 +228,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
         </div>
 
         {/* Code Mirror */}
-        <div className={`flex-1 border flex flex-col overflow-hidden shadow-sm ${
+        <div className={`flex-1 min-w-[350px] border flex flex-col overflow-hidden shadow-sm ${
           isLight ? 'bg-white border-zinc-200' : 'border-[var(--border-color)] bg-black/80'
         }`}>
            <div className={`px-4 py-3 flex justify-between items-center border-b ${
@@ -249,7 +249,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
         </div>
 
         {/* Action Column */}
-        <div className="w-[350px] flex flex-col gap-6">
+        <div className="w-[300px] min-w-[260px] shrink-0 flex flex-col gap-4">
            {/* Get Instance Button */}
            <button
              onClick={handleGetInstance}
