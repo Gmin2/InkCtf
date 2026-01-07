@@ -291,11 +291,6 @@ export function useInkCTF(): UseInkCTFReturn {
       );
 
       // Parse instance address from events
-      // Debug: log all events
-      console.log('Transaction events:', result.events.map(({ event }: any) =>
-        `${event.section}.${event.method}: ${JSON.stringify(event.data.toHuman())}`
-      ));
-
       // Look for Revive.Instantiated, Contracts.Instantiated, or System.NewAccount event
       const instantiatedEvent = result.events.find(
         ({ event }: any) =>
@@ -309,14 +304,12 @@ export function useInkCTF(): UseInkCTFReturn {
         // Revive/Contracts uses 'contract' field
         instanceAddress = (instantiatedEvent.event.data as any).contract?.toString()
           || (instantiatedEvent.event.data as any)[1]?.toString(); // fallback to positional
-        console.log('Found Instantiated event, address:', instanceAddress);
       } else {
         // Fallback: look for System.NewAccount event (new contract account)
         const newAccountEvent = result.events.find(
           ({ event }: any) => event.section === 'system' && event.method === 'NewAccount'
         );
         if (newAccountEvent) {
-          console.log('Found NewAccount event:', newAccountEvent.event.data.toHuman());
           instanceAddress = (newAccountEvent.event.data as any).account?.toString()
             || (newAccountEvent.event.data as any)[0]?.toString();
         }

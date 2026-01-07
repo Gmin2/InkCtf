@@ -99,8 +99,6 @@ export class ContractHelper {
     });
     const storageDepositLimit = 500_000_000_000n;
 
-    console.log('Sending tx to H160 address:', this.h160Address);
-
     return new Promise((resolve, reject) => {
       pallet.call(
         this.h160Address,
@@ -117,10 +115,8 @@ export class ContractHelper {
               this.api.events.system.ExtrinsicFailed.is(event)
             );
             if (failed) {
-              console.error('Transaction failed');
               reject(new Error('Transaction failed'));
             } else {
-              console.log('Transaction finalized:', status.asFinalized.toHex());
               resolve({ events, blockHash: status.asFinalized.toHex() });
             }
           }
@@ -136,7 +132,6 @@ export class ContractHelper {
    * Usage: await contract.authenticate("ethernaut0")
    */
   async authenticate(password: string): Promise<any> {
-    console.log(`Calling authenticate("${password}")...`);
     const args = this.encodeString(password);
     return this.sendTx(SELECTORS.authenticate, args);
   }
@@ -146,8 +141,6 @@ export class ContractHelper {
    * Hint: Check the source code!
    */
   async getPassword(): Promise<string> {
-    console.log('Hint: The password is set in the constructor. Check the source code!');
-    console.log('Or read the contract storage directly using Polkadot.js Apps');
     return 'Check the source code or contract storage!';
   }
 
@@ -155,7 +148,6 @@ export class ContractHelper {
    * Check if level is cleared
    */
   async getCleared(): Promise<boolean> {
-    console.log('To check if cleared, submit the instance!');
     return false;
   }
 
@@ -166,7 +158,6 @@ export class ContractHelper {
    * Usage: await contract.contribute({ value: 1000000000000n })
    */
   async contribute(options?: { value?: bigint }): Promise<any> {
-    console.log('Calling contribute()...');
     const value = options?.value || 0n;
     return this.sendTx(SELECTORS.contribute, new Uint8Array(), value);
   }
@@ -175,8 +166,17 @@ export class ContractHelper {
    * Withdraw from the contract
    */
   async withdraw(): Promise<any> {
-    console.log('Calling withdraw()...');
     return this.sendTx(SELECTORS.withdraw);
+  }
+
+  /**
+   * Trigger the fallback function by sending value
+   * Usage: await contract.fallback({ value: toUnit(0.0001) })
+   */
+  async fallback(options?: { value?: bigint }): Promise<any> {
+    const value = options?.value || 0n;
+    // Use the fallback selector to trigger the fallback function
+    return this.sendTx(SELECTORS.fallback, new Uint8Array(), value);
   }
 
   // ===== Vault Level Methods =====
@@ -186,7 +186,6 @@ export class ContractHelper {
    * Usage: await contract.unlock("secret")
    */
   async unlock(password: string): Promise<any> {
-    console.log(`Calling unlock("${password}")...`);
     const args = this.encodeString(password);
     return this.sendTx(SELECTORS.unlock, args);
   }
@@ -198,7 +197,6 @@ export class ContractHelper {
    * Usage: await contract.flip(true)
    */
   async flip(guess: boolean): Promise<any> {
-    console.log(`Calling flip(${guess})...`);
     const args = new Uint8Array([guess ? 1 : 0]);
     return this.sendTx(SELECTORS.flip, args);
   }
@@ -210,7 +208,6 @@ export class ContractHelper {
    * Usage: await contract.claimThrone({ value: 1000000000000n })
    */
   async claimThrone(options?: { value?: bigint }): Promise<any> {
-    console.log('Calling claimThrone()...');
     const value = options?.value || 0n;
     return this.sendTx(SELECTORS.claimThrone, new Uint8Array(), value);
   }
@@ -222,7 +219,6 @@ export class ContractHelper {
    * Usage: await contract.donate("0x...", { value: 1000000000000n })
    */
   async donate(to: string, options?: { value?: bigint }): Promise<any> {
-    console.log(`Calling donate(${to})...`);
     // Encode the address (this is simplified - might need proper encoding)
     const args = hexToU8a(to.startsWith('0x') ? to : `0x${to}`);
     const value = options?.value || 0n;

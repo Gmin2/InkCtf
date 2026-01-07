@@ -102,7 +102,7 @@ export const HomePage: FC<HomePageProps> = ({ theme }) => {
             <span className="font-black text-lg uppercase tracking-tighter text-(--text-secondary)">ink!Spector</span>
           </div>
           <div className="flex gap-12 text-[10px] font-black text-(--text-secondary) uppercase tracking-[0.3em]">
-            <a href="https://github.com/InkCTF/InkCTF" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Github_Repo</a>
+            <a href="https://github.com/Gmin2/InkCtf" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Github_Repo</a>
             <Link to="/docs" className="hover:text-ink-pink transition-colors">Documentation</Link>
             <a href="https://passet-hub.subscan.io" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Paseo_Scan</a>
           </div>

@@ -26,6 +26,14 @@ Frontend (React)  -->  Paseo Asset Hub Testnet
 
 All game logic runs on-chain. No backend server required.
 
+### Game Interface
+
+![Fallback Level](app/public/fallback.png)
+
+### Browser Console Exploitation
+
+![Console Commands](app/public/fallback-term.png)
+
 ---
 
 ## How to Play
@@ -175,6 +183,7 @@ MIT
 
 ## Links
 
+- [GitHub Repository](https://github.com/Gmin2/InkCtf)
 - [ink! Documentation](https://use.ink/)
 - [Paseo Testnet Faucet](https://faucet.polkadot.io/)
 - [Paseo Asset Hub Explorer](https://passet-hub.subscan.io/)
