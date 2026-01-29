@@ -9,6 +9,7 @@ import { InkSquink } from './components/svgs/InkSquink';
 import { HomePage } from './pages/HomePage';
 import { DocsPage } from './pages/DocsPage';
 import { LevelPage } from './pages/LevelPage';
+import { StatsPage } from './pages/StatsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 // Wallet Status Indicator
@@ -91,6 +92,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<HomePage theme={theme} />} />
             <Route path="/docs" element={<DocsPage theme={theme} />} />
+            <Route path="/stats" element={<StatsPage theme={theme} />} />
             <Route path="/level/:id" element={<LevelPage theme={theme} />} />
             <Route path="*" element={<NotFoundPage theme={theme} />} />
           </Routes>

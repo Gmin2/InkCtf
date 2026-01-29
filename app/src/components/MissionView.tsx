@@ -7,9 +7,48 @@ import { useProgress } from '../hooks/useProgress';
 import { TacticalRelay } from './TacticalRelay';
 import { LevelDocs } from './LevelDocs';
 import { CodeViewer } from './CodeViewer';
-import type { LevelId } from '../lib/chain-config';
+import { CONTRACTS, SELECTORS, type LevelId } from '../lib/chain-config';
 import { injectContractHelper, clearContractHelper } from '../lib/contract-helper';
 import { initializeConsoleUtils, showVictory } from '../lib/console-utils';
+import { hexToU8a, u8aToHex } from '@polkadot/util';
+import { decodeAddress } from '@polkadot/keyring';
+
+// Convert H160 address string to 20-byte Uint8Array
+function h160ToBytes(address: string): Uint8Array {
+  const hex = address.startsWith('0x') ? address.slice(2) : address;
+  return hexToU8a('0x' + hex.padStart(40, '0'));
+}
+
+// Convert SS58 address to H160 bytes (last 20 bytes of 32-byte AccountId)
+function ss58ToH160Bytes(ss58Address: string): Uint8Array {
+  try {
+    const accountBytes = decodeAddress(ss58Address);
+    return accountBytes.slice(12, 32);
+  } catch {
+    return h160ToBytes(ss58Address);
+  }
+}
+
+// Decode Vec<H160> from SCALE-encoded response
+// Response format: Result<Vec<H160>, LangError> = 0x00 + compact length + addresses (20 bytes each)
+function decodeVecH160(bytes: Uint8Array): string[] {
+  if (!bytes || bytes.length < 2) return [];
+  // First byte is Result variant (0 = Ok)
+  if (bytes[0] !== 0) return [];
+  // Second byte is compact-encoded length
+  const compactByte = bytes[1];
+  const count = compactByte >> 2;
+  if (count === 0) return [];
+
+  const addresses: string[] = [];
+  let offset = 2;
+  for (let i = 0; i < count && offset + 20 <= bytes.length; i++) {
+    const addrBytes = bytes.slice(offset, offset + 20);
+    addresses.push('0x' + u8aToHex(addrBytes, -1, false));
+    offset += 20;
+  }
+  return addresses;
+}
 
 interface MissionViewProps {
   level: Level;
@@ -30,6 +69,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     connect,
     createLevelInstance,
     submitLevelInstance,
+    queryContract,
     addConsoleMessage,
     clearConsole,
     setCurrentInstance,
@@ -40,6 +80,9 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
   const [instanceAddress, setInstanceAddress] = useState('');
   // State for level-specific docs modal
   const [showLevelDocs, setShowLevelDocs] = useState(false);
+  // State for tracking existing instance check
+  const [hasExistingInstance, setHasExistingInstance] = useState(false);
+  const [isCheckingInstance, setIsCheckingInstance] = useState(false);
 
   // Connect to chain when component mounts
   useEffect(() => {
@@ -47,6 +90,55 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
       connect();
     }
   }, [isConnected, isReady, connect]);
+
+  // Check for existing instances when API and account are ready
+  useEffect(() => {
+    const checkExistingInstance = async () => {
+      if (!api || !selectedAccount || !isReady) return;
+
+      const factoryAddress = CONTRACTS.factories[level.id as LevelId];
+      if (!factoryAddress || !CONTRACTS.statistics) return;
+
+      setIsCheckingInstance(true);
+      try {
+        // Build args: player (20 bytes) + level (20 bytes)
+        const playerBytes = ss58ToH160Bytes(selectedAccount.address);
+        const factoryBytes = h160ToBytes(factoryAddress);
+        const args = new Uint8Array([...playerBytes, ...factoryBytes]);
+
+        // Query existing instances from statistics contract
+        const result = await queryContract(
+          CONTRACTS.statistics,
+          SELECTORS.getPlayerInstances,
+          args
+        );
+
+        if (result) {
+          const instances = decodeVecH160(result);
+          if (instances.length > 0) {
+            // Auto-load the first (most recent) instance
+            const existingAddress = instances[instances.length - 1];
+            setHasExistingInstance(true);
+            setInstanceAddress(existingAddress);
+            setCurrentInstance({
+              levelId: level.id as LevelId,
+              instanceAddress: existingAddress,
+              createdAt: Date.now(),
+              completed: false,
+            });
+            addConsoleMessage('info', `Found existing instance: ${existingAddress}`);
+            addConsoleMessage('info', 'Your previous instance has been auto-loaded.');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for existing instance:', error);
+      } finally {
+        setIsCheckingInstance(false);
+      }
+    };
+
+    checkExistingInstance();
+  }, [api, selectedAccount, isReady, level.id, queryContract, setCurrentInstance, addConsoleMessage]);
 
   // Initialize console utilities when API is ready
   useEffect(() => {
@@ -86,6 +178,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
   useEffect(() => {
     setCurrentInstance(null);
     setInstanceAddress('');
+    setHasExistingInstance(false);
     clearContractHelper();
   }, [level.id, setCurrentInstance]);
 
@@ -253,34 +346,43 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
            {/* Get Instance Button */}
            <button
              onClick={handleGetInstance}
-             disabled={!isConnected || isLoading}
+             disabled={!isConnected || isLoading || isCheckingInstance || hasExistingInstance}
              className={`h-20 border flex flex-col items-center justify-center group transition-all ${
                !isConnected
                  ? `opacity-50 cursor-not-allowed ${isLight ? 'border-zinc-200 bg-zinc-50' : 'border-[var(--border-color)] bg-[var(--card-bg)]'}`
-                 : isLoading
+                 : isLoading || isCheckingInstance
                    ? 'opacity-70 cursor-wait bg-blue-600 border-blue-600 text-white'
-                   : `active:scale-95 shadow-md ${
-                       isLight
-                         ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
-                         : 'bg-blue-600 border-blue-600 text-white hover:brightness-110'
-                     }`
+                   : hasExistingInstance
+                     ? `cursor-default ${isLight ? 'bg-green-600 border-green-600 text-white' : 'bg-green-600 border-green-600 text-white'}`
+                     : `active:scale-95 shadow-md ${
+                         isLight
+                           ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                           : 'bg-blue-600 border-blue-600 text-white hover:brightness-110'
+                       }`
              }`}
            >
               <div className="flex items-center gap-2">
-                {isLoading ? (
+                {isLoading || isCheckingInstance ? (
                   <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : hasExistingInstance ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
                   <ICONS.Code />
                 )}
                 <span className="text-sm font-black uppercase tracking-wider">
-                  {isLoading ? 'Processing...' : 'Get_Instance'}
+                  {isCheckingInstance ? 'Checking...' : isLoading ? 'Processing...' : hasExistingInstance ? 'Instance_Loaded' : 'Get_Instance'}
                 </span>
               </div>
               {!isConnected && (
                 <span className={`text-[9px] mt-1 ${isLight ? 'text-zinc-400' : 'opacity-60'}`}>Connect wallet first</span>
+              )}
+              {hasExistingInstance && (
+                <span className={`text-[9px] mt-1 ${isLight ? 'text-green-100' : 'text-green-200'}`}>Previous instance auto-loaded</span>
               )}
            </button>
 

@@ -48,6 +48,12 @@ export const HomePage: FC<HomePageProps> = ({ theme }) => {
             >
               Access Vault Archives
             </Link>
+            <Link
+              to="/stats"
+              className="px-12 py-5 border text-[12px] font-black uppercase tracking-[0.2em] transition-all bg-ink-pink text-white border-ink-pink hover:brightness-110"
+            >
+              View Statistics
+            </Link>
           </div>
         </div>
 
@@ -104,6 +110,7 @@ export const HomePage: FC<HomePageProps> = ({ theme }) => {
           <div className="flex gap-12 text-[10px] font-black text-(--text-secondary) uppercase tracking-[0.3em]">
             <a href="https://github.com/Gmin2/InkCtf" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Github_Repo</a>
             <Link to="/docs" className="hover:text-ink-pink transition-colors">Documentation</Link>
+            <Link to="/stats" className="hover:text-ink-pink transition-colors">Statistics</Link>
             <a href="https://passet-hub.subscan.io" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Paseo_Scan</a>
           </div>
           <div className="text-[10px] mono text-(--text-secondary) uppercase tracking-[0.4em]">

@@ -15,8 +15,16 @@ export interface LevelProgress {
   txHash?: string;
 }
 
+export interface ActiveInstance {
+  levelId: LevelId;
+  instanceAddress: string;
+  walletAddress: string;
+  createdAt: number;
+}
+
 export interface PlayerProgress {
   completedLevels: Record<LevelId, LevelProgress>;
+  activeInstances: Record<string, ActiveInstance>; // key: `${walletAddress}_${levelId}`
   lastPlayedLevel: LevelId | null;
   totalCompleted: number;
   firstCompletedAt: number | null;
@@ -25,6 +33,7 @@ export interface PlayerProgress {
 
 const defaultProgress: PlayerProgress = {
   completedLevels: {} as Record<LevelId, LevelProgress>,
+  activeInstances: {} as Record<string, ActiveInstance>,
   lastPlayedLevel: null,
   totalCompleted: 0,
   firstCompletedAt: null,
@@ -129,6 +138,51 @@ export function useProgress() {
     return Object.keys(progress.completedLevels) as LevelId[];
   }, [progress.completedLevels]);
 
+  // Save an active instance for a wallet + level combination
+  const saveActiveInstance = useCallback((
+    walletAddress: string,
+    levelId: LevelId,
+    instanceAddress: string
+  ) => {
+    const key = `${walletAddress}_${levelId}`;
+    setProgress(prev => ({
+      ...prev,
+      activeInstances: {
+        ...prev.activeInstances,
+        [key]: {
+          levelId,
+          instanceAddress,
+          walletAddress,
+          createdAt: Date.now(),
+        },
+      },
+    }));
+  }, []);
+
+  // Get active instance for a wallet + level combination
+  const getActiveInstance = useCallback((
+    walletAddress: string,
+    levelId: LevelId
+  ): ActiveInstance | null => {
+    const key = `${walletAddress}_${levelId}`;
+    return progress.activeInstances[key] || null;
+  }, [progress.activeInstances]);
+
+  // Clear active instance (e.g., when level is completed or user wants fresh start)
+  const clearActiveInstance = useCallback((
+    walletAddress: string,
+    levelId: LevelId
+  ) => {
+    const key = `${walletAddress}_${levelId}`;
+    setProgress(prev => {
+      const { [key]: _, ...rest } = prev.activeInstances;
+      return {
+        ...prev,
+        activeInstances: rest,
+      };
+    });
+  }, []);
+
   return {
     progress,
     isLoaded,
@@ -139,5 +193,8 @@ export function useProgress() {
     resetProgress,
     getCompletionPercentage,
     getCompletedLevelIds,
+    saveActiveInstance,
+    getActiveInstance,
+    clearActiveInstance,
   };
 }

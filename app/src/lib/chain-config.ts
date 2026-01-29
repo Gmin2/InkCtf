@@ -94,4 +94,10 @@ export const SELECTORS = {
   // Vault level methods
   unlock: '0xaa9ea9de',
   isLocked: '0x78c8506b',
+
+  // Statistics contract methods
+  getTotalInstances: '0xf7c5b94a',
+  getSuccessCount: '0x47e83d4a',
+  getFailureCount: '0xb5a6e169',
+  getPlayerInstances: '0xbde27ce0',
 } as const;
