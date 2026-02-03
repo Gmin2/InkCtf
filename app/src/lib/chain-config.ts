@@ -52,7 +52,7 @@ export const TESTNET_CONTRACTS = {
 
 // Active configuration - change this to switch networks
 export const ACTIVE_CHAIN: ChainId = 'paseoPassetHub';
-export const CONTRACTS = ACTIVE_CHAIN === 'local' ? LOCAL_CONTRACTS : TESTNET_CONTRACTS;
+export const CONTRACTS = (ACTIVE_CHAIN as ChainId) === 'local' ? LOCAL_CONTRACTS : TESTNET_CONTRACTS;
 
 export type LevelId = keyof typeof CONTRACTS.factories;
 

@@ -49,8 +49,13 @@ export function useProgress() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as PlayerProgress;
-        setProgress(parsed);
+        const parsed = JSON.parse(stored);
+        // Migrate old data that doesn't have activeInstances
+        setProgress({
+          ...defaultProgress,
+          ...parsed,
+          activeInstances: parsed.activeInstances || {},
+        });
       }
     } catch (e) {
       console.warn('Failed to load progress from localStorage:', e);
@@ -148,7 +153,7 @@ export function useProgress() {
     setProgress(prev => ({
       ...prev,
       activeInstances: {
-        ...prev.activeInstances,
+        ...(prev.activeInstances || {}),
         [key]: {
           levelId,
           instanceAddress,
@@ -165,7 +170,7 @@ export function useProgress() {
     levelId: LevelId
   ): ActiveInstance | null => {
     const key = `${walletAddress}_${levelId}`;
-    return progress.activeInstances[key] || null;
+    return progress.activeInstances?.[key] || null;
   }, [progress.activeInstances]);
 
   // Clear active instance (e.g., when level is completed or user wants fresh start)

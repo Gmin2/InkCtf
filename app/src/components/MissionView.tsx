@@ -74,7 +74,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     clearConsole,
     setCurrentInstance,
   } = useInkCTF();
-  const { markLevelCompleted, isLevelCompleted, setLastPlayedLevel } = useProgress();
+  const { markLevelCompleted, isLevelCompleted, setLastPlayedLevel, saveActiveInstance, getActiveInstance } = useProgress();
 
   // Local state for instance address input (for manual entry if needed)
   const [instanceAddress, setInstanceAddress] = useState('');
@@ -91,22 +91,38 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     }
   }, [isConnected, isReady, connect]);
 
-  // Check for existing instances when API and account are ready
+  // Check for existing instances - first localStorage, then on-chain
   useEffect(() => {
     const checkExistingInstance = async () => {
-      if (!api || !selectedAccount || !isReady) return;
+      if (!selectedAccount) return;
+
+      // 1. First check localStorage (fast, reliable)
+      const localInstance = getActiveInstance(selectedAccount.address, level.id as LevelId);
+      if (localInstance) {
+        setHasExistingInstance(true);
+        setInstanceAddress(localInstance.instanceAddress);
+        setCurrentInstance({
+          levelId: level.id as LevelId,
+          instanceAddress: localInstance.instanceAddress,
+          createdAt: localInstance.createdAt,
+          completed: false,
+        });
+        addConsoleMessage('info', `Existing instance loaded: ${localInstance.instanceAddress}`);
+        return;
+      }
+
+      // 2. If not in localStorage, try on-chain query
+      if (!api || !isReady) return;
 
       const factoryAddress = CONTRACTS.factories[level.id as LevelId];
       if (!factoryAddress || !CONTRACTS.statistics) return;
 
       setIsCheckingInstance(true);
       try {
-        // Build args: player (20 bytes) + level (20 bytes)
         const playerBytes = ss58ToH160Bytes(selectedAccount.address);
         const factoryBytes = h160ToBytes(factoryAddress);
         const args = new Uint8Array([...playerBytes, ...factoryBytes]);
 
-        // Query existing instances from statistics contract
         const result = await queryContract(
           CONTRACTS.statistics,
           SELECTORS.getPlayerInstances,
@@ -116,7 +132,6 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
         if (result) {
           const instances = decodeVecH160(result);
           if (instances.length > 0) {
-            // Auto-load the first (most recent) instance
             const existingAddress = instances[instances.length - 1];
             setHasExistingInstance(true);
             setInstanceAddress(existingAddress);
@@ -126,19 +141,19 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
               createdAt: Date.now(),
               completed: false,
             });
-            addConsoleMessage('info', `Found existing instance: ${existingAddress}`);
-            addConsoleMessage('info', 'Your previous instance has been auto-loaded.');
+            saveActiveInstance(selectedAccount.address, level.id as LevelId, existingAddress);
+            addConsoleMessage('info', `Found existing instance on-chain: ${existingAddress}`);
           }
         }
-      } catch (error) {
-        console.error('Error checking for existing instance:', error);
+      } catch {
+        // On-chain query failed, not critical — localStorage is primary
       } finally {
         setIsCheckingInstance(false);
       }
     };
 
     checkExistingInstance();
-  }, [api, selectedAccount, isReady, level.id, queryContract, setCurrentInstance, addConsoleMessage]);
+  }, [api, selectedAccount, isReady, level.id, queryContract, setCurrentInstance, addConsoleMessage, getActiveInstance, saveActiveInstance]);
 
   // Initialize console utilities when API is ready
   useEffect(() => {
@@ -184,7 +199,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
 
   // Handle Get New Instance
   const handleGetInstance = async () => {
-    if (!isConnected) {
+    if (!isConnected || !selectedAccount) {
       addConsoleMessage('error', 'Please connect your wallet first');
       return;
     }
@@ -193,6 +208,10 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     const address = await createLevelInstance(level.id as LevelId);
     if (address) {
       setInstanceAddress(address);
+      // Save to localStorage for persistence across refreshes
+      saveActiveInstance(selectedAccount.address, level.id as LevelId, address);
+      setHasExistingInstance(true);
+      addConsoleMessage('info', 'Instance saved to local storage');
     }
   };
 

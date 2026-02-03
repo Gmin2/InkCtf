@@ -13,7 +13,7 @@ export const GlobalStatsPanel: FC<GlobalStatsPanelProps> = ({ stats }) => {
   // Find most popular level
   const mostPopular = stats.reduce(
     (max, stat) => (stat.totalInstances > max.totalInstances ? stat : max),
-    { levelId: '', totalInstances: 0 } as GlobalLevelStats
+    { levelId: 'instance', totalInstances: 0 } as GlobalLevelStats
   );
 
   const mostPopularLevel = LEVELS.find((l) => l.id === mostPopular.levelId);

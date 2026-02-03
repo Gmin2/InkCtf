@@ -69,11 +69,25 @@ function WalletContextProvider({ children }: { children: ReactNode }) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Detect wallets on mount
+  // Detect wallets on mount and auto-reconnect if previous session exists
   useEffect(() => {
     // Small delay to let wallet extensions inject
     const timer = setTimeout(() => {
-      setWallets(getAvailableWallets());
+      const detected = getAvailableWallets();
+      setWallets(detected);
+
+      // Auto-reconnect to previous wallet if stored
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const { source } = JSON.parse(stored);
+          if (source && detected.some((w) => w.name === source)) {
+            connectWallet(source);
+          }
+        } catch {
+          // ignore
+        }
+      }
     }, 100);
     return () => clearTimeout(timer);
   }, []);
@@ -125,7 +139,7 @@ function WalletContextProvider({ children }: { children: ReactNode }) {
       // Auto-select first account if none selected
       if (!selectedAccount && newAccounts.length > 0) {
         setSelectedAccountState(newAccounts[0]);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ address: newAccounts[0].address }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ address: newAccounts[0].address, name: newAccounts[0].name, source: walletName }));
       }
     } catch (error) {
       console.error('Failed to connect wallet:', error);
@@ -139,7 +153,7 @@ function WalletContextProvider({ children }: { children: ReactNode }) {
   const setSelectedAccount = (account: Account | null) => {
     setSelectedAccountState(account);
     if (account) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ address: account.address, name: account.name }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ address: account.address, name: account.name, source: account.source }));
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
