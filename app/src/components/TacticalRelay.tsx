@@ -113,8 +113,7 @@ export function TacticalRelay({ messages, onClear, theme = 'dark' }: TacticalRel
             <p className="text-[10px] mt-1 opacity-70">Connect wallet to interact</p>
           </div>
         ) : (
-          // Show only last 8 messages for minimal view
-          messages.slice(-8).map((msg) => {
+          messages.map((msg) => {
             const style = getMessageStyle(msg.type, isLight);
             return (
               <div key={msg.id} className="flex gap-1.5 leading-tight">

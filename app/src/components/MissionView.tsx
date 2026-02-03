@@ -208,46 +208,10 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
       return;
     }
 
-    // Check on-chain for an existing instance before creating a new one
-    if (api && isReady && CONTRACTS.statistics) {
-      try {
-        const playerBytes = ss58ToH160Bytes(selectedAccount.address);
-        const factoryBytes = h160ToBytes(CONTRACTS.factories[level.id as LevelId]);
-        const args = new Uint8Array([...playerBytes, ...factoryBytes]);
-
-        const result = await queryContract(
-          CONTRACTS.statistics,
-          SELECTORS.getPlayerInstances,
-          args
-        );
-
-        if (result) {
-          const instances = decodeVecH160(result);
-          if (instances.length > 0) {
-            const existingAddress = instances[instances.length - 1];
-            setInstanceAddress(existingAddress);
-            setCurrentInstance({
-              levelId: level.id as LevelId,
-              instanceAddress: existingAddress,
-              createdAt: Date.now(),
-              completed: false,
-            });
-            saveActiveInstance(selectedAccount.address, level.id as LevelId, existingAddress);
-            setHasExistingInstance(true);
-            addConsoleMessage('info', `Recovered existing instance from chain: ${existingAddress}`);
-            return;
-          }
-        }
-      } catch {
-        // Query failed, proceed to create a new instance
-      }
-    }
-
     addConsoleMessage('info', `Requesting new instance for level: ${level.id}`);
     const address = await createLevelInstance(level.id as LevelId);
     if (address) {
       setInstanceAddress(address);
-      // Save to localStorage for persistence across refreshes
       saveActiveInstance(selectedAccount.address, level.id as LevelId, address);
       setHasExistingInstance(true);
       addConsoleMessage('info', 'Instance saved to local storage');

@@ -414,7 +414,13 @@ export function useInkCTF(): UseInkCTFReturn {
       setIsLoading(false);
       return null;
     } catch (error) {
-      addConsoleMessage('error', `Failed to create instance: ${error}`);
+      const errorMsg = String(error);
+      if (errorMsg.includes('ContractReverted')) {
+        addConsoleMessage('error', 'An instance already exists for this level. The factory contract rejected a duplicate creation.');
+        addConsoleMessage('info', 'Enter your existing instance address manually, or use a different wallet.');
+      } else {
+        addConsoleMessage('error', `Failed to create instance: ${error}`);
+      }
       setIsLoading(false);
       return null;
     }
