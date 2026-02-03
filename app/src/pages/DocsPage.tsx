@@ -279,6 +279,16 @@ export const DocsPage: FC<DocsPageProps> = ({ theme }) => {
             }`}>Security Protocol Library</h2>
           </div>
         </div>
+        <Link
+          to="/walkthrough"
+          className={`px-4 py-2 border text-[10px] font-black uppercase tracking-wider transition-all ${
+            isLight
+              ? 'border-zinc-300 text-zinc-600 hover:text-black hover:border-black'
+              : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:text-ink-pink hover:border-ink-pink'
+          }`}
+        >
+          Full Walkthroughs →
+        </Link>
       </div>
 
       {/* Content */}

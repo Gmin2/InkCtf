@@ -11,6 +11,7 @@ import { DocsPage } from './pages/DocsPage';
 import { LevelPage } from './pages/LevelPage';
 import { StatsPage } from './pages/StatsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { WalkthroughPage } from './pages/WalkthroughPage';
 
 // Wallet Status Indicator
 const WalletStatus: FC = () => {
@@ -93,6 +94,7 @@ function AppContent() {
             <Route path="/" element={<HomePage theme={theme} />} />
             <Route path="/docs" element={<DocsPage theme={theme} />} />
             <Route path="/stats" element={<StatsPage theme={theme} />} />
+            <Route path="/walkthrough" element={<WalkthroughPage theme={theme} />} />
             <Route path="/level/:id" element={<LevelPage theme={theme} />} />
             <Route path="*" element={<NotFoundPage theme={theme} />} />
           </Routes>

@@ -122,8 +122,8 @@ export function TacticalRelay({ messages, onClear, theme = 'dark' }: TacticalRel
                   {formatTime(msg.timestamp)}
                 </span>
                 <span className={`${style.color} shrink-0`}>{style.prefix}</span>
-                <span className={`truncate ${isLight ? 'text-zinc-700' : 'text-[var(--text-primary)]/90'}`}>
-                  {truncateMessage(msg.message, 40)}
+                <span className={`${msg.type === 'error' ? 'whitespace-pre-wrap break-all' : 'truncate'} ${isLight ? 'text-zinc-700' : 'text-[var(--text-primary)]/90'}`}>
+                  {msg.type === 'error' ? msg.message : truncateMessage(msg.message, 40)}
                 </span>
               </div>
             );

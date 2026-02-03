@@ -21,12 +21,10 @@ But block numbers are:
 
 ## Why Block Data Isn't Random
 
-| Data Source | Why It Fails |
-|-------------|--------------|
-| `block_number` | Sequential and predictable |
-| `block_timestamp` | Validators can manipulate within bounds |
-| `block_hash` | Known before transaction execution |
-| Transaction data | Attacker controls their own tx data |
+- **`block_number`** — Sequential and predictable
+- **`block_timestamp`** — Validators can manipulate within bounds
+- **`block_hash`** — Known before transaction execution
+- **Transaction data** — Attacker controls their own tx data
 
 **Any value derivable from on-chain data can be predicted by an attacker.**
 

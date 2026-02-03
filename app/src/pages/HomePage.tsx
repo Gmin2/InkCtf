@@ -54,6 +54,16 @@ export const HomePage: FC<HomePageProps> = ({ theme }) => {
             >
               View Statistics
             </Link>
+            <Link
+              to="/walkthrough"
+              className={`px-12 py-5 border text-[12px] font-black uppercase tracking-[0.2em] transition-all ${
+                theme === 'light'
+                  ? 'bg-white text-black border-black hover:bg-black hover:text-white'
+                  : 'bg-(--card-bg) text-(--text-primary) border-(--border-color) hover:bg-(--text-primary) hover:text-(--bg-void)'
+              }`}
+            >
+              Walkthrough Guides
+            </Link>
           </div>
         </div>
 
@@ -111,6 +121,7 @@ export const HomePage: FC<HomePageProps> = ({ theme }) => {
             <a href="https://github.com/Gmin2/InkCtf" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Github_Repo</a>
             <Link to="/docs" className="hover:text-ink-pink transition-colors">Documentation</Link>
             <Link to="/stats" className="hover:text-ink-pink transition-colors">Statistics</Link>
+            <Link to="/walkthrough" className="hover:text-ink-pink transition-colors">Walkthroughs</Link>
             <a href="https://passet-hub.subscan.io" target="_blank" rel="noopener noreferrer" className="hover:text-ink-pink transition-colors">Paseo_Scan</a>
           </div>
           <div className="text-[10px] mono text-(--text-secondary) uppercase tracking-[0.4em]">
