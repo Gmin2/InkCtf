@@ -74,7 +74,7 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     clearConsole,
     setCurrentInstance,
   } = useInkCTF();
-  const { markLevelCompleted, isLevelCompleted, setLastPlayedLevel, saveActiveInstance, getActiveInstance } = useProgress();
+  const { markLevelCompleted, isLevelCompleted, setLastPlayedLevel, saveActiveInstance, getActiveInstance, clearActiveInstance } = useProgress();
 
   // Local state for instance address input (for manual entry if needed)
   const [instanceAddress, setInstanceAddress] = useState('');
@@ -231,6 +231,11 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     if (success) {
       // Save progress to localStorage
       markLevelCompleted(level.id as LevelId, instanceAddress);
+
+      // Clear the active instance so a fresh one can be created on replay
+      if (selectedAccount) {
+        clearActiveInstance(selectedAccount.address, level.id as LevelId);
+      }
 
       showVictory(level.title);
       addConsoleMessage('success', '='.repeat(40));
