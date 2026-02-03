@@ -48,11 +48,9 @@ Attacker          Target Contract
 
 This exact vulnerability was exploited in **The DAO hack** (2016):
 
-| Impact | Details |
-|--------|---------|
-| Amount Stolen | ~$60 million in ETH |
-| Result | Ethereum hard fork |
-| Legacy | Birth of Ethereum Classic |
+- **Amount Stolen** — ~$60 million in ETH
+- **Result** — Ethereum hard fork
+- **Legacy** — Birth of Ethereum Classic
 
 ---
 
@@ -77,11 +75,9 @@ fn withdraw_safe(&mut self, amount: Balance) {
 
 ## Additional Protections
 
-| Protection | Description |
-|------------|-------------|
-| **Reentrancy Guard** | Mutex lock preventing recursive calls |
-| **Pull over Push** | Let users withdraw instead of pushing funds |
-| **Gas Limits** | Limit gas for transfers (not fully reliable) |
+- **Reentrancy Guard** — Mutex lock preventing recursive calls
+- **Pull over Push** — Let users withdraw instead of pushing funds
+- **Gas Limits** — Limit gas for transfers (not fully reliable)
 
 ---
 

@@ -32,11 +32,9 @@ pub fn fallback(&mut self) {
 
 ## The Attack Flow
 
-| Step | Action | Result |
-|------|--------|--------|
-| 1 | `contribute({ value: toUnit(0.0001) })` | You're now a contributor |
-| 2 | `fallback({ value: toUnit(0.0001) })` | You're now the owner! |
-| 3 | `withdraw()` | Funds drained |
+1. `contribute({ value: toUnit(0.0001) })` — You're now a contributor
+2. `fallback({ value: toUnit(0.0001) })` — You're now the owner!
+3. `withdraw()` — Funds drained
 
 ---
 

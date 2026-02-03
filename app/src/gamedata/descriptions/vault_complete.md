@@ -22,11 +22,9 @@ pub struct Vault {
 
 ## How Storage Works
 
-| Layer | Visibility |
-|-------|------------|
-| Source Code | Can hide getters |
-| Compiled Contract | Bytecode is public |
-| Blockchain Storage | **100% Public** |
+- **Source Code** — Can hide getters
+- **Compiled Contract** — Bytecode is public
+- **Blockchain Storage** — **100% Public**
 
 Every piece of data on the blockchain is publicly readable via:
 - Block explorers
@@ -37,11 +35,9 @@ Every piece of data on the blockchain is publicly readable via:
 
 ## Key Takeaways
 
-| Myth | Reality |
-|------|---------|
-| "Private variables are hidden" | All storage is public |
-| "No getter = no access" | Anyone can read storage directly |
-| "Secrets can be stored on-chain" | Never store secrets on-chain! |
+- **"Private variables are hidden"** — All storage is public
+- **"No getter = no access"** — Anyone can read storage directly
+- **"Secrets can be stored on-chain"** — Never store secrets on-chain!
 
 ---
 
@@ -56,12 +52,10 @@ Every piece of data on the blockchain is publicly readable via:
 
 ## Proper Secret Handling
 
-| Method | How It Works |
-|--------|--------------|
-| **Hash Storage** | Store `keccak256(password)`, verify with hash comparison |
-| **Off-chain Secrets** | Keep secrets off-chain, verify proofs on-chain |
-| **Commit-Reveal** | Commit hash first, reveal later |
-| **Zero-Knowledge Proofs** | Prove knowledge without revealing |
+- **Hash Storage** — Store `keccak256(password)`, verify with hash comparison
+- **Off-chain Secrets** — Keep secrets off-chain, verify proofs on-chain
+- **Commit-Reveal** — Commit hash first, reveal later
+- **Zero-Knowledge Proofs** — Prove knowledge without revealing
 
 ---
 

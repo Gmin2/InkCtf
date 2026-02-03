@@ -22,11 +22,9 @@ Drain **all funds** from the contract.
 
 Study the `withdraw()` function carefully:
 
-| Question | Look For |
-|----------|----------|
-| When does it check your balance? | Before or after transfer? |
-| When does it update your balance? | Before or after transfer? |
-| When does it send funds? | What order? |
+- **When does it check your balance?** — Before or after transfer?
+- **When does it update your balance?** — Before or after transfer?
+- **When does it send funds?** — What order?
 
 **Critical:** What happens if you call `withdraw()` again *during* the transfer?
 

@@ -30,11 +30,9 @@ The contract exposed a getter for the "secret" password!
 
 ## Key Takeaways
 
-| Concept | Lesson |
-|---------|--------|
-| **Storage Visibility** | All blockchain data is public |
-| **Private Keyword** | Only affects code visibility, not data |
-| **Secrets** | Never store sensitive data on-chain |
+- **Storage Visibility** — All blockchain data is public
+- **Private Keyword** — Only affects code visibility, not data
+- **Secrets** — Never store sensitive data on-chain
 
 ---
 

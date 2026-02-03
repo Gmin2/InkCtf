@@ -21,11 +21,9 @@ A "King of the Hill" game. Whoever sends the most becomes the new King!
 
 ## Game Rules
 
-| Rule | Description |
-|------|-------------|
-| Claim Throne | Send more than the current prize |
-| Previous King | Receives your payment |
-| Owner | Can reclaim throne anytime |
+- **Claim Throne** — Send more than the current prize
+- **Previous King** — Receives your payment
+- **Owner** — Can reclaim throne anytime
 
 ---
 

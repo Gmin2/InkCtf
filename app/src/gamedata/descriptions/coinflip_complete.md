@@ -19,10 +19,8 @@ Since block numbers are public and sequential, you could predict every flip!
 
 ## The Vulnerability
 
-| Block Number | Result |
-|--------------|--------|
-| Odd (1, 3, 5...) | `true` |
-| Even (2, 4, 6...) | `false` |
+- **Odd (1, 3, 5...)** — `true`
+- **Even (2, 4, 6...)** — `false`
 
 ---
 
@@ -39,11 +37,9 @@ Since block numbers are public and sequential, you could predict every flip!
 
 For Polkadot/Substrate chains:
 
-| Method | Description |
-|--------|-------------|
-| **Randomness Pallet** | Built-in VRF-based randomness |
-| **External Oracles** | Chainlink VRF or similar |
-| **Commit-Reveal** | Players commit hash, then reveal |
+- **Randomness Pallet** — Built-in VRF-based randomness
+- **External Oracles** — Chainlink VRF or similar
+- **Commit-Reveal** — Players commit hash, then reveal
 
 ---
 

@@ -44,12 +44,10 @@ fn become_king(&mut self) {
 
 ## What Happens Now
 
-| Step | Action | Result |
-|------|--------|--------|
-| 1 | Someone calls `claimThrone()` | ✓ Passes value check |
-| 2 | Contract tries to pay you | ❌ Transfer fails |
-| 3 | Transaction reverts | ❌ No new King |
-| 4 | You remain King | 👑 Forever! |
+1. Someone calls `claimThrone()` — ✓ Passes value check
+2. Contract tries to pay you — ❌ Transfer fails
+3. Transaction reverts — ❌ No new King
+4. You remain King — 👑 Forever!
 
 ---
 
