@@ -4,6 +4,7 @@ import { CONTRACTS, SELECTORS, CHAINS, ACTIVE_CHAIN, type LevelId } from '../lib
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { decodeAddress } from '@polkadot/keyring';
 import { hexToU8a, u8aToHex } from '@polkadot/util';
+import type { ErrorInfo } from '../components/ErrorDialog';
 
 // Transaction status
 export type TxStatus =
@@ -31,6 +32,59 @@ export interface ConsoleMessage {
   txHash?: string;
 }
 
+// Parse blockchain errors into user-friendly messages
+function parseChainError(errorMsg: string): ErrorInfo | null {
+  const lower = errorMsg.toLowerCase();
+
+  if (lower.includes('accountnotmapped') || lower.includes('account not mapped')) {
+    return {
+      title: 'Account Not Mapped',
+      message: 'Your Substrate account has not been mapped to an Ethereum-style (H160) address on this chain. The Revive pallet requires this mapping before you can interact with contracts.',
+      suggestion: 'Use the Polkadot.js Apps interface or the eth_map extrinsic to map your account. Visit the faucet link below to get testnet tokens first if needed.',
+      links: [
+        { label: 'Paseo Faucet', url: 'https://faucet.polkadot.io/passet-hub' },
+        { label: 'Polkadot.js Apps', url: 'https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Ftestnet-passet-hub.polkadot.io#/extrinsics' },
+      ],
+    };
+  }
+
+  if (
+    lower.includes('insufficientbalance') ||
+    lower.includes('insufficient balance') ||
+    lower.includes('fundsunavailable') ||
+    lower.includes('funds unavailable') ||
+    lower.includes('inability to pay') ||
+    lower.includes('balance too low')
+  ) {
+    return {
+      title: 'Insufficient Balance',
+      message: 'Your account does not have enough tokens to pay for this transaction. On Paseo Asset Hub testnet, you need PAS tokens to cover gas fees and any value transfers.',
+      suggestion: 'Get free testnet tokens from the Paseo faucet. Make sure to request tokens for the Asset Hub (not the relay chain).',
+      links: [
+        { label: 'Paseo Faucet', url: 'https://faucet.polkadot.io/passet-hub' },
+      ],
+    };
+  }
+
+  if (lower.includes('contractnotfound') || lower.includes('contract not found')) {
+    return {
+      title: 'Contract Not Found',
+      message: 'The contract at the specified address could not be found on chain. It may not be deployed yet on this network.',
+      suggestion: 'Make sure you are connected to the correct network (Paseo Asset Hub). If using a local node, ensure the contracts have been deployed.',
+    };
+  }
+
+  if (lower.includes('cancelled') || lower.includes('rejected')) {
+    return {
+      title: 'Transaction Cancelled',
+      message: 'The transaction was cancelled or rejected in your wallet extension.',
+      suggestion: 'Try again and approve the transaction when your wallet prompts you.',
+    };
+  }
+
+  return null;
+}
+
 // Hook return type
 interface UseInkCTFReturn {
   // State
@@ -40,6 +94,7 @@ interface UseInkCTFReturn {
   txStatus: TxStatus;
   consoleMessages: ConsoleMessage[];
   currentInstance: LevelInstance | null;
+  errorDialog: ErrorInfo | null;
 
   // Actions
   connect: () => Promise<void>;
@@ -50,6 +105,7 @@ interface UseInkCTFReturn {
   addConsoleMessage: (type: ConsoleMessage['type'], message: string, txHash?: string) => void;
   clearConsole: () => void;
   setCurrentInstance: (instance: LevelInstance | null) => void;
+  dismissError: () => void;
 }
 
 export function useInkCTF(): UseInkCTFReturn {
@@ -59,6 +115,9 @@ export function useInkCTF(): UseInkCTFReturn {
   const [txStatus, setTxStatus] = useState<TxStatus>({ type: 'idle' });
   const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
   const [currentInstance, setCurrentInstance] = useState<LevelInstance | null>(null);
+  const [errorDialog, setErrorDialog] = useState<ErrorInfo | null>(null);
+
+  const dismissError = useCallback(() => setErrorDialog(null), []);
 
   // Add console message
   const addConsoleMessage = useCallback((
@@ -241,6 +300,8 @@ export function useInkCTF(): UseInkCTFReturn {
                   }
                 }
                 addConsoleMessage('error', `Transaction failed: ${errorMsg}`);
+                const parsed = parseChainError(errorMsg);
+                if (parsed) setErrorDialog(parsed);
                 reject(new Error(errorMsg));
               } else {
                 addConsoleMessage('success', `Transaction finalized!`);
@@ -252,6 +313,8 @@ export function useInkCTF(): UseInkCTFReturn {
         .catch((error: any) => {
           setTxStatus({ type: 'error', message: error.message });
           addConsoleMessage('error', `Transaction error: ${error.message}`);
+          const parsed = parseChainError(error.message || String(error));
+          if (parsed) setErrorDialog(parsed);
           reject(error);
         });
     });
@@ -410,6 +473,7 @@ export function useInkCTF(): UseInkCTFReturn {
     txStatus,
     consoleMessages,
     currentInstance,
+    errorDialog,
     connect,
     createLevelInstance,
     submitLevelInstance,
@@ -418,5 +482,6 @@ export function useInkCTF(): UseInkCTFReturn {
     addConsoleMessage,
     clearConsole,
     setCurrentInstance,
+    dismissError,
   };
 }

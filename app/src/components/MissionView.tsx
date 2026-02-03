@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Level } from './../types';
 import { ICONS } from './../constants';
 import { useWallet } from '../lib/polkadot-provider';
@@ -7,6 +8,7 @@ import { useProgress } from '../hooks/useProgress';
 import { TacticalRelay } from './TacticalRelay';
 import { LevelDocs } from './LevelDocs';
 import { CodeViewer } from './CodeViewer';
+import { ErrorDialog } from './ErrorDialog';
 import { CONTRACTS, SELECTORS, type LevelId } from '../lib/chain-config';
 import { injectContractHelper, clearContractHelper } from '../lib/contract-helper';
 import { initializeConsoleUtils, showVictory } from '../lib/console-utils';
@@ -73,6 +75,8 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     addConsoleMessage,
     clearConsole,
     setCurrentInstance,
+    errorDialog,
+    dismissError,
   } = useInkCTF();
   const { markLevelCompleted, isLevelCompleted, setLastPlayedLevel, saveActiveInstance, getActiveInstance, clearActiveInstance } = useProgress();
 
@@ -202,6 +206,41 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
     if (!isConnected || !selectedAccount) {
       addConsoleMessage('error', 'Please connect your wallet first');
       return;
+    }
+
+    // Check on-chain for an existing instance before creating a new one
+    if (api && isReady && CONTRACTS.statistics) {
+      try {
+        const playerBytes = ss58ToH160Bytes(selectedAccount.address);
+        const factoryBytes = h160ToBytes(CONTRACTS.factories[level.id as LevelId]);
+        const args = new Uint8Array([...playerBytes, ...factoryBytes]);
+
+        const result = await queryContract(
+          CONTRACTS.statistics,
+          SELECTORS.getPlayerInstances,
+          args
+        );
+
+        if (result) {
+          const instances = decodeVecH160(result);
+          if (instances.length > 0) {
+            const existingAddress = instances[instances.length - 1];
+            setInstanceAddress(existingAddress);
+            setCurrentInstance({
+              levelId: level.id as LevelId,
+              instanceAddress: existingAddress,
+              createdAt: Date.now(),
+              completed: false,
+            });
+            saveActiveInstance(selectedAccount.address, level.id as LevelId, existingAddress);
+            setHasExistingInstance(true);
+            addConsoleMessage('info', `Recovered existing instance from chain: ${existingAddress}`);
+            return;
+          }
+        }
+      } catch {
+        // Query failed, proceed to create a new instance
+      }
     }
 
     addConsoleMessage('info', `Requesting new instance for level: ${level.id}`);
@@ -340,6 +379,16 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
                  >
                     Platform Docs
                  </button>
+                 <Link
+                  to="/walkthrough"
+                  className={`w-full py-3 border text-[10px] font-bold uppercase tracking-widest transition-all text-center block ${
+                    isLight
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-amber-500/5 text-amber-400 border-amber-500/20 hover:bg-amber-500/10'
+                  }`}
+                 >
+                    View Walkthrough
+                 </Link>
               </div>
            </div>
         </div>
@@ -490,6 +539,13 @@ export const MissionView: React.FC<MissionViewProps> = ({ level, onBack, onShowD
         isCompleted={currentInstance?.completed || levelCompleted}
         isOpen={showLevelDocs}
         onClose={() => setShowLevelDocs(false)}
+        theme={theme}
+      />
+
+      {/* Error dialog for user-friendly error display */}
+      <ErrorDialog
+        error={errorDialog}
+        onDismiss={dismissError}
         theme={theme}
       />
     </div>
