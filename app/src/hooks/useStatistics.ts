@@ -8,10 +8,42 @@ import type { PlayerLevelStats, GlobalLevelStats, StatisticsData } from '../type
 
 const LEVEL_IDS: LevelId[] = ['instance', 'fallback', 'reentrance', 'coinflip', 'king', 'vault'];
 
+const CACHE_KEY_GLOBAL = 'inkctf_stats_global';
+const CACHE_KEY_PLAYER = 'inkctf_stats_player_';
+
+interface CachedData {
+  data: StatisticsData;
+  timestamp: number;
+}
+
+function getCacheKey(account?: string): string {
+  return account ? `${CACHE_KEY_PLAYER}${account}` : CACHE_KEY_GLOBAL;
+}
+
+function loadCachedStats(account?: string): CachedData | null {
+  try {
+    const raw = localStorage.getItem(getCacheKey(account));
+    if (!raw) return null;
+    return JSON.parse(raw) as CachedData;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedStats(data: StatisticsData, account?: string): void {
+  try {
+    const cached: CachedData = { data, timestamp: Date.now() };
+    localStorage.setItem(getCacheKey(account), JSON.stringify(cached));
+  } catch {
+    // localStorage full or unavailable — silently ignore
+  }
+}
+
 interface UseStatisticsReturn {
   data: StatisticsData | null;
   isLoading: boolean;
   error: string | null;
+  lastUpdated: number | null;
   refetch: () => Promise<void>;
 }
 
@@ -60,9 +92,17 @@ function ss58ToH160Bytes(ss58Address: string): Uint8Array {
 export function useStatistics(): UseStatisticsReturn {
   const { api, queryContract, connect } = useInkCTF();
   const { selectedAccount } = useWallet();
-  const [data, setData] = useState<StatisticsData | null>(null);
+  const [data, setData] = useState<StatisticsData | null>(() => {
+    // Load cached data immediately for instant display
+    const cached = loadCachedStats(selectedAccount?.address);
+    return cached?.data ?? null;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(() => {
+    const cached = loadCachedStats(selectedAccount?.address);
+    return cached?.timestamp ?? null;
+  });
 
   const fetchStats = useCallback(async () => {
     if (!api || !CONTRACTS.statistics) {
@@ -130,7 +170,10 @@ export function useStatistics(): UseStatisticsReturn {
         if (result.global) globalStats.push(result.global);
       }
 
-      setData({ playerStats, globalStats });
+      const statsData = { playerStats, globalStats };
+      setData(statsData);
+      setLastUpdated(Date.now());
+      saveCachedStats(statsData, selectedAccount?.address);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch statistics');
     } finally {
@@ -156,6 +199,7 @@ export function useStatistics(): UseStatisticsReturn {
     data,
     isLoading,
     error,
+    lastUpdated,
     refetch: fetchStats,
   };
 }

@@ -14,7 +14,18 @@ interface StatsPageProps {
 }
 
 export const StatsPage: FC<StatsPageProps> = ({ theme: _theme }) => {
-  const { data, isLoading, error, refetch } = useStatistics();
+  const { data, isLoading, error, lastUpdated, refetch } = useStatistics();
+
+  const formatLastUpdated = (ts: number | null): string => {
+    if (!ts) return '';
+    const seconds = Math.floor((Date.now() - ts) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  };
   const { selectedAccount } = useWallet();
 
   return (
@@ -52,6 +63,11 @@ export const StatsPage: FC<StatsPageProps> = ({ theme: _theme }) => {
             </Link>
           </div>
           <div className="flex items-center gap-4">
+            {lastUpdated && (
+              <span className="text-[10px] mono text-(--text-secondary)">
+                {isLoading ? 'Refreshing...' : `Updated ${formatLastUpdated(lastUpdated)}`}
+              </span>
+            )}
             {selectedAccount && (
               <span className="text-[10px] mono text-(--text-secondary)">
                 {selectedAccount.address.slice(0, 8)}...{selectedAccount.address.slice(-6)}
@@ -104,7 +120,7 @@ export const StatsPage: FC<StatsPageProps> = ({ theme: _theme }) => {
       <footer className="mt-auto py-8 border-t border-(--border-color) relative">
         <div className="px-12 text-center">
           <p className="text-[10px] mono text-(--text-secondary) uppercase tracking-widest">
-            Statistics are fetched directly from the on-chain Statistics contract
+            Statistics are fetched from the on-chain Statistics contract and cached locally
           </p>
         </div>
         <Crosshair className="top-0 -left-[6px]" />
