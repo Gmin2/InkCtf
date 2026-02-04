@@ -344,8 +344,81 @@ export function useInkCTF(): UseInkCTFReturn {
     try {
       // Encode player address as argument (32-byte AccountId)
       const playerBytes = decodeAddress(selectedAccount.address);
-      addConsoleMessage('info', `Player: ${selectedAccount.address} (${playerBytes.length} bytes)`);
-      addConsoleMessage('info', `Selector: ${SELECTORS.createInstance}`);
+      addConsoleMessage('info', `Player: ${selectedAccount.address}`);
+
+      // Pre-flight dry-run to check if instance creation would succeed
+      addConsoleMessage('info', 'Running dry-run check...');
+      const dryRunResult = await queryContract(factoryAddress, SELECTORS.createInstance, playerBytes);
+
+      if (!dryRunResult) {
+        // Dry-run failed or reverted — instance likely already exists
+        // The return data from create_instance is Result<AccountId, LevelError>
+        // On revert, we can't get the address from the dry-run, but we know one exists
+        addConsoleMessage('warning', 'Instance already exists for this player. Attempting to recover address...');
+
+        // Try to recover: dry-run validate_instance with a dummy address to see if factory has data
+        // Since the factory uses deterministic addressing (CREATE2 with player as salt),
+        // we can try calling the factory's create_instance via RPC to get the would-be address
+        // The RPC dry-run returns Ok even on revert, with flags — let's try the raw API
+        try {
+          const data = buildCallData(SELECTORS.createInstance, playerBytes);
+          const useRevive = !!api.tx.revive;
+          const contractsApi = useRevive ? (api.call as any).reviveApi : (api.call as any).contractsApi;
+
+          if (contractsApi) {
+            const rawResult = await contractsApi.call(
+              selectedAccount.address,
+              factoryAddress,
+              0,
+              null,
+              null,
+              data
+            );
+
+            // Even on revert, the RPC returns the result data with flags
+            // Check if we can extract the return data
+            const resultData = (rawResult as any).result;
+            if (resultData?.isOk) {
+              const okData = resultData.asOk;
+              const flags = okData.flags?.toNumber?.() || okData.flags || 0;
+              const returnData = okData.data;
+
+              // Flag 1 = REVERT. If reverted but we have return data, try to decode the error
+              if (flags & 1) {
+                addConsoleMessage('error', 'Factory confirmed: an instance already exists for this player on this level.');
+                addConsoleMessage('info', 'Enter your existing instance address in the field below, or use a different wallet.');
+              } else if (returnData && returnData.length >= 33) {
+                // Success in dry-run: Result::Ok(AccountId) = 0x00 + 32-byte AccountId
+                if (returnData[0] === 0) {
+                  const addrBytes = returnData.slice(1, 33);
+                  // Last 20 bytes are the H160 address
+                  const h160 = addrBytes.slice(12, 32);
+                  const recoveredAddress = '0x' + Buffer.from(h160).toString('hex');
+                  addConsoleMessage('success', `Recovered instance address: ${recoveredAddress}`);
+
+                  setCurrentInstance({
+                    levelId,
+                    instanceAddress: recoveredAddress,
+                    createdAt: Date.now(),
+                    completed: false,
+                  });
+                  setIsLoading(false);
+                  return recoveredAddress;
+                }
+              }
+            }
+          }
+        } catch {
+          // Raw API call failed, fall through to error message
+        }
+
+        addConsoleMessage('info', 'Could not recover the instance address automatically.');
+        setIsLoading(false);
+        return null;
+      }
+
+      // Dry-run succeeded — safe to submit the real transaction
+      addConsoleMessage('info', 'Dry-run passed. Submitting transaction...');
 
       const result = await callContract(
         factoryAddress,
@@ -354,7 +427,6 @@ export function useInkCTF(): UseInkCTFReturn {
       );
 
       // Parse instance address from events
-      // Look for Revive.Instantiated, Contracts.Instantiated, or System.NewAccount event
       const instantiatedEvent = result.events.find(
         ({ event }: any) =>
           (event.section === 'revive' && event.method === 'Instantiated') ||
@@ -364,11 +436,9 @@ export function useInkCTF(): UseInkCTFReturn {
       let instanceAddress: string | null = null;
 
       if (instantiatedEvent) {
-        // Revive/Contracts uses 'contract' field
         instanceAddress = (instantiatedEvent.event.data as any).contract?.toString()
-          || (instantiatedEvent.event.data as any)[1]?.toString(); // fallback to positional
+          || (instantiatedEvent.event.data as any)[1]?.toString();
       } else {
-        // Fallback: look for System.NewAccount event (new contract account)
         const newAccountEvent = result.events.find(
           ({ event }: any) => event.section === 'system' && event.method === 'NewAccount'
         );
@@ -380,37 +450,18 @@ export function useInkCTF(): UseInkCTFReturn {
 
       if (instanceAddress) {
         addConsoleMessage('success', `Instance created at: ${instanceAddress}`);
-
         setCurrentInstance({
           levelId,
           instanceAddress,
           createdAt: Date.now(),
           completed: false,
         });
-
         setIsLoading(false);
         return instanceAddress;
       }
 
-      // No new instance event found - might be duplicate or events not emitted for cross-contract calls
-      // Check if transaction used minimal gas (likely duplicate/no-op)
-      const successEvent = result.events.find(
-        ({ event }: any) => event.section === 'system' && event.method === 'ExtrinsicSuccess'
-      );
-      if (successEvent) {
-        const dispatchInfo = (successEvent.event.data as any).dispatchInfo || (successEvent.event.data as any)[0];
-        const refTime = dispatchInfo?.weight?.refTime?.toString().replace(/,/g, '') || '0';
-        const gasUsed = BigInt(refTime);
-
-        // If gas used is low (< 1.5B), likely the instance already exists
-        if (gasUsed < 1_500_000_000n) {
-          addConsoleMessage('warning', 'Instance may already exist for this player (low gas usage detected)');
-          addConsoleMessage('info', 'Try with a fresh node or different player address');
-        } else {
-          addConsoleMessage('warning', 'Instance created but address not found in events');
-          addConsoleMessage('info', 'Check browser console for event details');
-        }
-      }
+      addConsoleMessage('warning', 'Instance created but address not found in events');
+      addConsoleMessage('info', 'Check browser console for event details');
       setIsLoading(false);
       return null;
     } catch (error) {
@@ -424,7 +475,7 @@ export function useInkCTF(): UseInkCTFReturn {
       setIsLoading(false);
       return null;
     }
-  }, [api, selectedAccount, callContract, addConsoleMessage]);
+  }, [api, selectedAccount, callContract, queryContract, addConsoleMessage]);
 
   // Submit (validate) level instance
   const submitLevelInstance = useCallback(async (
