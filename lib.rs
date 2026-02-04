@@ -363,4 +363,120 @@ mod ink_spector {
                 .map_err(|_| ())   // Handle contracts Result
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn default_accounts() -> ink::env::test::DefaultAccounts<ink::env::DefaultEnvironment> {
+            ink::env::test::default_accounts::<ink::env::DefaultEnvironment>()
+        }
+
+        fn set_caller(caller: ink::Address) {
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(caller);
+        }
+
+        fn make_account_id(val: u8) -> AccountId {
+            let mut bytes = [0u8; 32];
+            bytes[31] = val;
+            AccountId::from(bytes)
+        }
+
+        #[ink::test]
+        fn constructor_sets_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = InkSpector::new();
+            assert_eq!(contract.get_owner(), accounts.alice);
+        }
+
+        #[ink::test]
+        fn set_statistics_by_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            let stats_id = make_account_id(1);
+            let result = contract.set_statistics(stats_id);
+            assert!(result.is_ok());
+        }
+
+        #[ink::test]
+        fn set_statistics_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            set_caller(accounts.bob);
+            let stats_id = make_account_id(1);
+            let result = contract.set_statistics(stats_id);
+            assert_eq!(result, Err(InkSpectorError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn register_level_by_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            let level_id = make_account_id(2);
+            let result = contract.register_level(level_id);
+            assert!(result.is_ok());
+            assert!(contract.is_level_registered(level_id));
+        }
+
+        #[ink::test]
+        fn register_level_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            set_caller(accounts.bob);
+            let level_id = make_account_id(2);
+            let result = contract.register_level(level_id);
+            assert_eq!(result, Err(InkSpectorError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn is_level_registered_false_for_unknown() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = InkSpector::new();
+
+            let level_id = make_account_id(99);
+            assert!(!contract.is_level_registered(level_id));
+        }
+
+        #[ink::test]
+        fn create_level_instance_rejects_unregistered_level() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            let level_id = make_account_id(5);
+            let result = contract.create_level_instance(level_id);
+            assert_eq!(result, Err(InkSpectorError::LevelNotRegistered));
+        }
+
+        #[ink::test]
+        fn submit_level_instance_rejects_unknown_instance() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = InkSpector::new();
+
+            let instance_id = make_account_id(10);
+            let result = contract.submit_level_instance(instance_id);
+            assert_eq!(result, Err(InkSpectorError::InstanceNotOwned));
+        }
+
+        #[ink::test]
+        fn get_instance_data_returns_none_for_unknown() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = InkSpector::new();
+
+            let instance_id = make_account_id(10);
+            assert!(contract.get_instance_data(instance_id).is_none());
+        }
+    }
 }

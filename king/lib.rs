@@ -88,4 +88,87 @@ mod king {
             self.env().balance().low_u128()
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn default_accounts() -> ink::env::test::DefaultAccounts<ink::env::DefaultEnvironment> {
+            ink::env::test::default_accounts::<ink::env::DefaultEnvironment>()
+        }
+
+        fn set_caller(caller: ink::primitives::Address) {
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(caller);
+        }
+
+        fn set_value_transferred(value: u128) {
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(value);
+        }
+
+        #[ink::test]
+        fn constructor_sets_owner_and_king() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(100);
+            let contract = King::new();
+            assert_eq!(contract.get_king(), accounts.alice);
+            assert_eq!(contract.get_owner(), accounts.alice);
+            assert_eq!(contract.get_prize(), 100);
+        }
+
+        #[ink::test]
+        fn constructor_zero_prize() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(0);
+            let contract = King::new();
+            assert_eq!(contract.get_prize(), 0);
+            assert_eq!(contract.get_king(), accounts.alice);
+        }
+
+        #[ink::test]
+        #[should_panic(expected = "Must send at least the prize amount")]
+        fn claim_throne_rejects_insufficient_value() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(1000);
+            let mut contract = King::new();
+
+            // Bob sends less than the prize
+            set_caller(accounts.bob);
+            set_value_transferred(500);
+            contract.claim_throne();
+        }
+
+        #[ink::test]
+        fn owner_can_claim_without_meeting_prize() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(1000);
+            let mut contract = King::new();
+
+            // Owner can claim with 0 value
+            set_value_transferred(0);
+            contract.claim_throne();
+            assert_eq!(contract.get_king(), accounts.alice);
+        }
+
+        #[ink::test]
+        fn get_king_returns_current_king() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(0);
+            let contract = King::new();
+            assert_eq!(contract.get_king(), accounts.alice);
+        }
+
+        #[ink::test]
+        fn get_owner_returns_original_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            set_value_transferred(0);
+            let contract = King::new();
+            assert_eq!(contract.get_owner(), accounts.alice);
+        }
+    }
 }

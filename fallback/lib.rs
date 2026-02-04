@@ -138,4 +138,128 @@ mod fallback {
             self.cleared
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn default_accounts() -> ink::env::test::DefaultAccounts<ink::env::DefaultEnvironment> {
+            ink::env::test::default_accounts::<ink::env::DefaultEnvironment>()
+        }
+
+        fn set_caller(caller: ink::primitives::Address) {
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(caller);
+        }
+
+        fn set_value_transferred(value: u128) {
+            ink::env::test::set_value_transferred::<ink::env::DefaultEnvironment>(value);
+        }
+
+        #[ink::test]
+        fn constructor_sets_owner_and_contribution() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = Fallback::new();
+            assert_eq!(contract.get_owner(), accounts.alice);
+            assert!(!contract.get_cleared());
+        }
+
+        #[ink::test]
+        fn contribute_adds_to_balance() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            // Bob contributes
+            set_caller(accounts.bob);
+            set_value_transferred(100);
+            contract.contribute();
+            assert_eq!(contract.get_contribution(), 100);
+        }
+
+        #[ink::test]
+        #[should_panic(expected = "Contribution too large")]
+        fn contribute_rejects_large_amount() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            set_caller(accounts.bob);
+            set_value_transferred(1_000_000_000); // exactly the limit
+            contract.contribute();
+        }
+
+        #[ink::test]
+        fn contribute_does_not_change_owner_for_small_amounts() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            set_caller(accounts.bob);
+            set_value_transferred(500);
+            contract.contribute();
+            // Owner should still be alice (bob's 500 < alice's 1000_000_000_000_000)
+            assert_eq!(contract.get_owner(), accounts.alice);
+        }
+
+        #[ink::test]
+        #[should_panic(expected = "Must send value")]
+        fn fallback_requires_value() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            set_caller(accounts.bob);
+            set_value_transferred(0);
+            contract.fallback();
+        }
+
+        #[ink::test]
+        #[should_panic(expected = "Must have contributed first")]
+        fn fallback_requires_prior_contribution() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            set_caller(accounts.bob);
+            set_value_transferred(1);
+            contract.fallback();
+        }
+
+        #[ink::test]
+        fn fallback_exploit_changes_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            // Step 1: Bob contributes a small amount
+            set_caller(accounts.bob);
+            set_value_transferred(100);
+            contract.contribute();
+
+            // Step 2: Bob calls fallback with value -> becomes owner
+            set_value_transferred(1);
+            contract.fallback();
+            assert_eq!(contract.get_owner(), accounts.bob);
+        }
+
+        #[ink::test]
+        #[should_panic(expected = "Only owner can withdraw")]
+        fn withdraw_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Fallback::new();
+
+            set_caller(accounts.bob);
+            contract.withdraw();
+        }
+
+        #[ink::test]
+        fn cleared_initially_false() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = Fallback::new();
+            assert!(!contract.get_cleared());
+        }
+    }
 }

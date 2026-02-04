@@ -207,4 +207,157 @@ mod statistics {
             self.owner
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn default_accounts() -> ink::env::test::DefaultAccounts<ink::env::DefaultEnvironment> {
+            ink::env::test::default_accounts::<ink::env::DefaultEnvironment>()
+        }
+
+        fn set_caller(caller: ink::Address) {
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(caller);
+        }
+
+        #[ink::test]
+        fn constructor_sets_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = Statistics::new();
+            assert_eq!(contract.get_owner(), accounts.alice);
+        }
+
+        #[ink::test]
+        fn save_new_level_by_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            let result = contract.save_new_level(accounts.bob);
+            assert!(result.is_ok());
+            assert!(contract.is_level_registered(accounts.bob));
+            assert_eq!(contract.get_total_instances(accounts.bob), 0);
+        }
+
+        #[ink::test]
+        fn save_new_level_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            set_caller(accounts.bob);
+            let result = contract.save_new_level(accounts.charlie);
+            assert_eq!(result, Err(StatisticsError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn is_level_registered_returns_false_for_unknown() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = Statistics::new();
+            assert!(!contract.is_level_registered(accounts.bob));
+        }
+
+        #[ink::test]
+        fn create_new_instance_by_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            contract.save_new_level(accounts.bob).unwrap();
+
+            let result = contract.create_new_instance(accounts.charlie, accounts.bob, accounts.dave);
+            assert!(result.is_ok());
+            assert_eq!(contract.get_total_instances(accounts.bob), 1);
+
+            let instances = contract.get_player_instances(accounts.dave, accounts.bob);
+            assert_eq!(instances.len(), 1);
+            assert_eq!(instances[0], accounts.charlie);
+        }
+
+        #[ink::test]
+        fn create_new_instance_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            set_caller(accounts.bob);
+            let result = contract.create_new_instance(accounts.charlie, accounts.bob, accounts.dave);
+            assert_eq!(result, Err(StatisticsError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn submit_success_increments_count() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            assert_eq!(contract.get_success_count(accounts.bob, accounts.charlie), 0);
+
+            contract.submit_success(accounts.dave, accounts.charlie, accounts.bob).unwrap();
+            assert_eq!(contract.get_success_count(accounts.bob, accounts.charlie), 1);
+
+            contract.submit_success(accounts.dave, accounts.charlie, accounts.bob).unwrap();
+            assert_eq!(contract.get_success_count(accounts.bob, accounts.charlie), 2);
+        }
+
+        #[ink::test]
+        fn submit_failure_increments_count() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            assert_eq!(contract.get_failure_count(accounts.bob, accounts.charlie), 0);
+
+            contract.submit_failure(accounts.dave, accounts.charlie, accounts.bob).unwrap();
+            assert_eq!(contract.get_failure_count(accounts.bob, accounts.charlie), 1);
+        }
+
+        #[ink::test]
+        fn submit_success_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            set_caller(accounts.bob);
+            let result = contract.submit_success(accounts.charlie, accounts.dave, accounts.bob);
+            assert_eq!(result, Err(StatisticsError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn submit_failure_rejects_non_owner() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            set_caller(accounts.bob);
+            let result = contract.submit_failure(accounts.charlie, accounts.dave, accounts.bob);
+            assert_eq!(result, Err(StatisticsError::Unauthorized));
+        }
+
+        #[ink::test]
+        fn multiple_instances_tracked_per_player_level() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let mut contract = Statistics::new();
+
+            contract.save_new_level(accounts.bob).unwrap();
+            contract.create_new_instance(accounts.charlie, accounts.bob, accounts.dave).unwrap();
+            contract.create_new_instance(accounts.eve, accounts.bob, accounts.dave).unwrap();
+
+            let instances = contract.get_player_instances(accounts.dave, accounts.bob);
+            assert_eq!(instances.len(), 2);
+            assert_eq!(contract.get_total_instances(accounts.bob), 2);
+        }
+
+        #[ink::test]
+        fn get_player_instances_empty_for_unknown() {
+            let accounts = default_accounts();
+            set_caller(accounts.alice);
+            let contract = Statistics::new();
+            let instances = contract.get_player_instances(accounts.bob, accounts.charlie);
+            assert!(instances.is_empty());
+        }
+    }
 }

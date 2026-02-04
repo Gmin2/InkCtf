@@ -52,4 +52,63 @@ mod vault {
         // But blockchain storage is ALWAYS public!
         // Players can read the password directly from contract storage
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[ink::test]
+        fn new_creates_locked_vault() {
+            let vault = Vault::new(String::from("secret123"));
+            assert!(vault.is_locked());
+        }
+
+        #[ink::test]
+        fn unlock_with_correct_password() {
+            let mut vault = Vault::new(String::from("secret123"));
+            vault.unlock(String::from("secret123"));
+            assert!(!vault.is_locked());
+        }
+
+        #[ink::test]
+        fn unlock_with_wrong_password_stays_locked() {
+            let mut vault = Vault::new(String::from("secret123"));
+            vault.unlock(String::from("wrong"));
+            assert!(vault.is_locked());
+        }
+
+        #[ink::test]
+        fn unlock_with_empty_password_stays_locked() {
+            let mut vault = Vault::new(String::from("secret123"));
+            vault.unlock(String::from(""));
+            assert!(vault.is_locked());
+        }
+
+        #[ink::test]
+        fn empty_password_vault_can_be_unlocked() {
+            let mut vault = Vault::new(String::from(""));
+            vault.unlock(String::from(""));
+            assert!(!vault.is_locked());
+        }
+
+        #[ink::test]
+        fn multiple_wrong_attempts_then_correct() {
+            let mut vault = Vault::new(String::from("pass"));
+            vault.unlock(String::from("wrong1"));
+            vault.unlock(String::from("wrong2"));
+            assert!(vault.is_locked());
+            vault.unlock(String::from("pass"));
+            assert!(!vault.is_locked());
+        }
+
+        #[ink::test]
+        fn unlock_is_idempotent() {
+            let mut vault = Vault::new(String::from("pass"));
+            vault.unlock(String::from("pass"));
+            assert!(!vault.is_locked());
+            // Unlocking again should still be unlocked
+            vault.unlock(String::from("pass"));
+            assert!(!vault.is_locked());
+        }
+    }
 }
